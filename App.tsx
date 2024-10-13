@@ -1,118 +1,124 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
-
-import React from 'react';
-import type {PropsWithChildren} from 'react';
+import React, {useState} from 'react';
 import {
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
+  Image,
   StyleSheet,
-  Text,
-  useColorScheme,
   View,
+  Text,
+  TouchableOpacity,
+  Platform,
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
+import * as Sharing from 'expo-sharing';
+export default function App() {
+  const [localUri, setLocalUrl] = useState<string>('');
+  /**
+   * 打开选择图片
+   */
+  async function openImagePickerAsync() {
+    // 选择图片
+    // 获取权限
+    const permissionResult =
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
+    console.log(permissionResult);
+    if (!permissionResult.granted) {
+      // 用户不同意
+      console.log('需要访问相册的权限');
+      return;
+    }
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+    // 获取权限成功
+    // 异步打开手机相册，让用户选择图片
+    const pickerResult = await ImagePicker.launchImageLibraryAsync();
 
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
+    if (pickerResult.canceled) {
+      // 用户没有选择图片
+      return;
+    }
 
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
+    setLocalUrl(pickerResult.assets[0].uri);
+  }
+
+  function goBack() {
+    setLocalUrl('');
+  }
+
+  // 分享图片
+  async function openShareImageAsync() {
+    if (Platform.OS === 'web') {
+      console.log('当前平台无法share');
+      return;
+    }
+    await Sharing.shareAsync(localUri);
+  }
+
+  if (localUri) {
+    // 根据localUri显示图片
+    return (
+      <>
+        <View style={styles.container}>
+          <Image source={{uri: localUri}} style={styles.thumbnail} />
+          {/* 分享照片 */}
+          <TouchableOpacity style={styles.button} onPress={openShareImageAsync}>
+            <Text style={styles.buttonText}>分享图片</Text>
+          </TouchableOpacity>
+          {/* 重新选择 */}
+          <TouchableOpacity style={styles.button} onPress={goBack}>
+            <Text style={styles.buttonText}>重新选择</Text>
+          </TouchableOpacity>
+        </View>
+      </>
+    );
+  }
+
   return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
+    <View style={styles.container}>
+      {/* logo图片 */}
+      <Image source={require('./assets/logo.png')} />
+      {/* 提示文字 */}
+      <Text style={styles.instructions}>按下按钮，与朋友分享手机中的图片</Text>
+      {/* 分享照片的按钮 */}
+      <TouchableOpacity style={styles.button} onPress={openImagePickerAsync}>
+        <Text style={styles.buttonText}>选择图片</Text>
+      </TouchableOpacity>
     </View>
   );
 }
 
-function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
-  };
-
-  return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
-      />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
-    </SafeAreaView>
-  );
-}
-
 const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
+  logo: {
+    width: 305,
+    height: 159,
+    marginBottom: 10,
   },
-  sectionDescription: {
-    marginTop: 8,
+  instructions: {
+    color: '#888',
     fontSize: 18,
-    fontWeight: '400',
+    marginHorizontal: 15,
+    textAlign: 'center',
+    marginBottom: 10,
   },
-  highlight: {
-    fontWeight: '700',
+  button: {
+    backgroundColor: 'blue',
+    paddingLeft: 20,
+    paddingRight: 20,
+    paddingTop: 10,
+    paddingBottom: 10,
+    borderRadius: 10,
+    marginTop: 10,
+  },
+  buttonText: {
+    fontSize: 16,
+    color: '#fff',
+  },
+  thumbnail: {
+    width: 300,
+    height: 300,
+    resizeMode: 'contain',
   },
 });
-
-export default App;
